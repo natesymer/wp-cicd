@@ -8,9 +8,11 @@ function get_app_pw_user() {
 	$username = $_SERVER['PHP_AUTH_USER'];
 	$app_pw = $_SERVER['PHP_AUTH_PW'];
 
-	$user = wp_authenticate_application_password(null, $username, $app_pw);
-	if ($user instanceof WP_User) {
-		return $user;
+	if ($username && $app_pw && username_exists($username)) {
+		$user = wp_authenticate_application_password(null, $username, $app_pw);
+		if ($user instanceof WP_User) {
+			return $user;
+		}
 	}
 
 	return false;
