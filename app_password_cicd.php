@@ -1,6 +1,8 @@
 <?php
 
-// curl -X POST -H "Authorization: Basic YWRtaW46RmppeiBuODBMIEhsTjAgcDhMSyBNZ2xsIFQxQ1c=" http://localhost:8000/__upload_theme"
+/*
+	TODO: don't blindly allow app passwords as a means of logging in
+*/
 
 function get_app_pw_user() {
 	$username = $_SERVER['PHP_AUTH_USER'];
@@ -19,27 +21,18 @@ add_filter('application_password_is_api_request', '__return_true');
 
 define("THE_TOKEN", "TOKEN");
 
-function hsh($token) {
-	if (function_exists('hash')) {
-		return hash('sha256', $token);
-	} else {
-		return sha1($token);
-	}
-}
-
 add_filter('get_user_metadata', function($check, $user_id, $meta_key) {
 	if ($meta_key === 'session_tokens') {
 		$u = get_app_pw_user();
 		if ($u && $u->ID === $user_id) {
-			$v = [hsh(THE_TOKEN) => PHP_INT_MAX];
-			return [$v];
+			return [['asdfasdfasdf' => PHP_INT_MAX]];
 		}
 	}
 
 	return $check;
 }, 10, 3);
 
-// This is the first hook where wp_validate_auth_cookie is defined.
+// This is the first hook where wp_generate_auth_cookie is defined.
 add_filter('plugins_loaded', function() {
 	$u = get_app_pw_user();
 	if ($u) {
