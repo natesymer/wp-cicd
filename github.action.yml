@@ -1,23 +1,31 @@
-name: Deploy to WordPress
+name: 'Deploy to WordPress'
 
 on:
-	push:
-		branches: [ $default-branch ]
+  push:
+    branches:
+      - 'main'
+      - 'master'
 
 env:
-	WP_USERNAME: ${{ secrets.WP_USERNAME }} # Your WordPress username. Needs admin privileges.
-	WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }} # Application password for user specified in WP_USERNAME
-	WP_HOME: ${{ vars.WP_HOME }} # The value from home_url()
-	BUNDLE_DIRECTORY: ${{ vars.BUNDLE_DIRECTORY }} # Path relative to project root of theme bundle (should have a directory inside it that contains all theme code)
+  WP_USERNAME: ${{ vars.WP_USERNAME }} # Your WordPress username. Needs admin privileges.
+  WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }} # Application password for user specified in WP_USERNAME
+  WP_HOME: ${{ vars.WP_HOME }} # The value from home_url()
+  BUNDLE_DIRECTORY: ${{ vars.BUNDLE_DIRECTORY }} # Path relative to project root of theme bundle (should have a directory inside it that contains all theme code)
 
 jobs:
-	deploy:
-		runs-on: ubuntu-latest
-		steps:
-			- name: 'Checkout GitHub Action'
-			  uses: actions/checkout@v3
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Checkout GitHub Action'
+        uses: 'actions/checkout@v3'
 
-			- name: Deploy WordPress Theme
-			  run: |
-				zip bundle.zip -r ./${{ env.BUNDLE_DIRECTORY }}
-				curl --user "${{ WP_USERNAME }}:${{ WP_APP_PASSWORD }}" ${{ env.WP_HOME }}/__cicd__/deploy_theme -F "themezip=@bundle.zip" --max-time 900
+      - name: 'Deploy WordPress Theme'
+        run: |
+            echo "Building:"
+            echo "BUNDLE_DIRECTORY = ${{ env.BUNDLE_DIRECTORY }}"
+            echo "WP_USERNAME = ${{ env.WP_USERNAME }}"
+            echo "WP_HOME = ${{ env.WP_HOME }}"
+            echo "WP_APP_PASSWORD = ${{ env.WP_APP_PASSWORD }}"
+            cd ${{ env.BUNDLE_DIRECTORY }}
+            zip bundle.zip -r .
+            curl --user "${{ env.WP_USERNAME }}:${{ env.WP_APP_PASSWORD }}" ${{ env.WP_HOME }}/__cicd__/deploy_theme -F "themezip=@bundle.zip" --max-time 900
