@@ -16,16 +16,11 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: 'Checkout GitHub Action'
+      - name: 'Checkout Code'
         uses: 'actions/checkout@v3'
 
       - name: 'Deploy WordPress Theme'
         run: |
-            echo "Building:"
-            echo "BUNDLE_DIRECTORY = ${{ env.BUNDLE_DIRECTORY }}"
-            echo "WP_USERNAME = ${{ env.WP_USERNAME }}"
-            echo "WP_HOME = ${{ env.WP_HOME }}"
-            echo "WP_APP_PASSWORD = ${{ env.WP_APP_PASSWORD }}"
             cd ${{ env.BUNDLE_DIRECTORY }}
             zip bundle.zip -r .
             curl --user "${{ env.WP_USERNAME }}:${{ env.WP_APP_PASSWORD }}" ${{ env.WP_HOME }}/__cicd__/deploy_theme -F "themezip=@bundle.zip" --max-time 900
