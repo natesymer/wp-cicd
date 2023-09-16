@@ -1,8 +1,13 @@
 <?php
-
 /*
-	TODO: don't blindly allow app passwords as a means of logging in
-*/
+ * Plugin Name: WP-CI/CD
+ * Description: Securely exposes an endpoint to allow for installing themes via POST. Authentication is handled via basic auth and WP application passwords.
+ * Requires PHP: 7.0
+ * Author: Nate Symer
+ * Author URI: https://symer.io/
+ */
+
+(function() {
 
 function get_app_pw_user() {
 	$username = $_SERVER['PHP_AUTH_USER'];
@@ -21,42 +26,36 @@ function get_app_pw_user() {
 add_filter('wp_is_application_passwords_available', '__return_true');
 add_filter('application_password_is_api_request', '__return_true');
 
-define("THE_TOKEN", "TOKEN");
-
-add_filter('get_user_metadata', function($check, $user_id, $meta_key) {
-	if ($meta_key === 'session_tokens') {
-		$u = get_app_pw_user();
-		if ($u && $u->ID === $user_id) {
-			return [['asdfasdfasdf' => PHP_INT_MAX]];
-		}
-	}
-
-	return $check;
-}, 10, 3);
-
-// This is the first hook where wp_generate_auth_cookie is defined.
-add_filter('plugins_loaded', function() {
+function deploy_theme() {
 	$u = get_app_pw_user();
 	if ($u) {
-		$_COOKIE[AUTH_COOKIE] = wp_generate_auth_cookie($u->ID, PHP_INT_MAX, 'auth', THE_TOKEN);
-		$_COOKIE[SECURE_AUTH_COOKIE] = wp_generate_auth_cookie($u->ID, PHP_INT_MAX, 'secure_auth', THE_TOKEN);
-		$_COOKIE[LOGGED_IN_COOKIE] = wp_generate_auth_cookie($u->ID, PHP_INT_MAX, 'logged_in', THE_TOKEN);
+		wp_set_current_user($u->ID);
 	}
-});
 
-function deploy_theme() {
 	if (!current_user_can('upload_themes')) {
-		wp_die( __( 'Sorry, you are not allowed to install themes on this site.' ) );
+		header("Content-Type: application/json");
+		echo json_encode([
+			'errors' => [
+				[
+					'code_human_readable' => __('Sorry, you are not allowed to install themes on this site.'),
+					'code' => 'not_permitted',
+					'reason' => "You don't have the permissions to upload themes (upload_themes)"
+				]
+			],
+			'logs' => []
+		]);
+
+		die();
 	}
 
 	require_once ABSPATH . 'wp-admin/includes/file.php';
 	require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
 
-	// from wp-admin/includes/util.php
-	// rewritten to avoid calling ob_* and flush()
+	// A new implementation of the function
+	// in wp-admin/includes/util.php
 	function show_message($message) {
-		if (is_wp_error( $message ) ) {
-			if ($message->get_error_data() && is_string( $message->get_error_data() ) ) {
+		if (is_wp_error($message)) {
+			if ($message->get_error_data() && is_string($message->get_error_data())) {
 				$message = $message->get_error_message() . ': ' . $message->get_error_data();
 			} else {
 				$message = $message->get_error_message();
@@ -122,3 +121,5 @@ add_filter('parse_query', function($q) {
 		die();
 	}
 });
+
+})();
